@@ -15,9 +15,6 @@ platecolor = {'其他':1,'蓝牌':2,'黄牌':3,'白牌':4,'黑牌':5,'绿牌':6}
 def getTime():
     return datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
 
-def version():
-    return 'SX-datacenter V0.1.1'
-
 def initLogging(logFilename):
     """Init for logging"""
     path = os.path.split(logFilename)
@@ -33,7 +30,7 @@ def initLogging(logFilename):
                     filemode = 'a');
     
 class DataCenter:
-    def __init__(self,trigger):
+    def __init__(self,trigger=('',1)):
         #print 'Welcome to %s'%version()
         self.trigger = trigger
         self.style_red = 'size=4 face=arial color=red'
@@ -59,31 +56,31 @@ class DataCenter:
         del self.orc
         #print 'datacenter quit'
 
-    def setupMysql(self):
-        try:
-            self.imgMysql.login()
-        except Exception,e:
-            now = getTime()
-            print now,e
-            #logging.exception(e)
-            print now,'Reconn after 15 seconds'
-            time.sleep(15)
-            self.setupMysql()
-        else:
-            pass        
-            
-    def setupOrc(self):
-        try:
-            self.orc.login()
-        except Exception,e:
-            now = getTime()
-            print now,e
-            #logging.exception(e)
-            print now,'Reconn after 15 seconds'
-            time.sleep(15)
-            self.setupOrc()
-        else:
-            pass
+##    def setupMysql(self):
+##        try:
+##            self.imgMysql.login()
+##        except Exception,e:
+##            now = getTime()
+##            print now,e
+##            #logging.exception(e)
+##            print now,'Reconn after 15 seconds'
+##            time.sleep(15)
+##            self.setupMysql()
+##        else:
+##            pass        
+##            
+##    def setupOrc(self):
+##        try:
+##            self.orc.login()
+##        except Exception,e:
+##            now = getTime()
+##            print now,e
+##            #logging.exception(e)
+##            print now,'Reconn after 15 seconds'
+##            time.sleep(15)
+##            self.setupOrc()
+##        else:
+##            pass
 
     def loginMysql(self):
         self.imgMysql.login()
@@ -102,6 +99,30 @@ class DataCenter:
                 self.site[i['TYPE_ALIAS']] = i['TYPE_VALUE']
         except Exception,e:
             print getTime(),e
+
+    def getIPState(self):
+        try:
+            iplist = self.imgMysql.getIPList()
+            now = datetime.datetime.now() - datetime.timedelta(minutes = 1)
+            conn_state =0
+            #ftp_state = 0
+            for i in iplist:
+                if i['activetime'] > now:
+                    conn_state = 2
+                else:
+                    conn_state = 0
+                self.trigger.emit("%s"%i['ip'],conn_state)
+                
+        except MySQLdb.Error,e:
+##            self.trigger.emit("<font %s>%s</font>"%(self.style_red,getTime()+str(e)),1)
+##            logging.exception(e)
+##            self.loginmysqlflag = True
+##            self.loginmysqlcount = 0
+            raise
+        except Exception,e:
+            raise
+##            self.trigger.emit("<font %s>%s</font>"%(self.style_red,getTime()+str(e)),1)
+##            logging.exception(e)
 
     def getWlcp(self):
         for i in self.orc.getWlcp():
@@ -166,47 +187,15 @@ class DataCenter:
                     self.imgMysql.sqlCommit()
                     self.orc.orcCommit()
                     carstr =  '%s %s %s | %s | %s | %s车道 | IP:%s'%(getTime(),s['platecode'].encode("gbk"),s['platecolor'].encode("gbk"),s['roadname'].encode("gbk"),self.direction.get(s['directionid'],u'其他').encode("gbk"),s['channelid'].encode("gbk"),s['pcip'].encode("gbk"))
-                    self.trigger.emit("<font %s>%s</font>"%(self.style_blue,carstr))
+                    self.trigger.emit("<font %s>%s</font>"%(self.style_blue,carstr),1)
                 #print getTime(),'update %s plateinfo'%count
             else:
                 time.sleep(0.25)
         except MySQLdb.Error,e:
-            #print 'setData mysql',e // ,'%s |'%self.direction.get(s['directionid'],u'其他'),'%s车道'%s['channelid']
             raise
         except Exception,e:
-            #print getTime(),'setData',e
             raise
-##
-##def main():
-##    dataCenter = DataCenter()
-##    dataCenter.setupMysql()
-##    dataCenter.setupOrc()
-##    dataCenter.getSiteID()
-##    dataCenter.getWlcp()
-##    dataCenter.getBkcp()
-##    diskstate = DiskState()
-##    count = 0
-##    while True:
-##        try:
-##            dataCenter.setData()
-##            time.sleep(0.125)
-##            count += 1
-##            if count >= 80:
-##                ds = diskstate.checkDisk()
-##                for i in dataCenter.disk:
-##                    print getTime(),i,"%0.2f%%"%ds.get(i,'none')
-##                dataCenter.getSiteID()
-##                dataCenter.getWlcp()
-##                dataCenter.getBkcp()
-##                count = 0
-##        except MySQLdb.Error,e:
-##            print getTime(),'MYSQLdb',e
-##            dataCenter.setupMysql()
-##        except Exception,e:
-##            #print str(e)[:3]
-##            if str(e)[:3] == 'ORA':
-##                dataCenter.setupOrc()
-##            print getTime(),e
+
        
 if __name__ == "__main__":
     #main()

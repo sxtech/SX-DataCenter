@@ -8,6 +8,8 @@ class Orc:
         self.passwd  = passwd
         self.port    = 1521
         self.sid     = sid
+        self.cur = None
+        self.conn = None
         
     def __del__(self):
         if self.cur != None:

@@ -26,14 +26,14 @@ def initLogging(logFilename):
                     filemode = 'a');
 
 def version():
-    return 'SX-DataCenter V0.1.3'
+    return 'SX-DataCenter V0.2.0'
 
 
 #ds = DiskState()
 #print ds.checkDisk()
  
 class MyThread(QtCore.QThread):
-    trigger = QtCore.pyqtSignal(str)
+    trigger = QtCore.pyqtSignal(str,int)
  
     def __init__(self, parent=None):
         super(MyThread, self).__init__(parent)
@@ -49,6 +49,7 @@ class dcmain:
         self.style_green = 'size=4 face=arial color=green'
         self.trigger = trigger
         self.dc = DataCenter(trigger)
+        initLogging(r'log\datacenter.log')
         self.count = 0
         self.loginmysqlflag = True
         self.loginorcflag = True
@@ -56,7 +57,7 @@ class dcmain:
         self.loginorccount = 0
         self.setupflag = False
 
-        self.trigger.emit("<font %s>%s</font>"%(self.style_green,"Welcome to "+version()))
+        self.trigger.emit("<font %s>%s</font>"%(self.style_green,"Welcome to "+version()),1)
 
 
     def __del__(self):
@@ -65,17 +66,18 @@ class dcmain:
     def loginMYSQL(self):
         now = getTime()
         try:
-            self.trigger.emit("<font %s>%s</font>"%(self.style_green,now+'Start to connect mysql server '))
+            self.trigger.emit("<font %s>%s</font>"%(self.style_green,now+'Start to connect mysql server '),1)
             self.dc.loginMysql()
-            self.trigger.emit("<font %s>%s</font>"%(self.style_green,now+'Connect mysql success! '))
+            self.dc.getIPState()
+            self.trigger.emit("<font %s>%s</font>"%(self.style_green,now+'Connect mysql success! '),1)
         except MySQLdb.Error,e:
-            self.trigger.emit("<font %s>%s</font>"%(self.style_red,now+str(e)))
-            self.trigger.emit("<font %s>%s</font>"%(self.style_red,now+'Reconn after 15 seconds'))
+            self.trigger.emit("<font %s>%s</font>"%(self.style_red,now+str(e)),1)
+            self.trigger.emit("<font %s>%s</font>"%(self.style_red,now+'Reconn after 15 seconds'),1)
             logging.exception(e)
             self.loginmysqlflag = True
             self.loginmysqlcount = 1
         except Exception,e:
-            self.trigger.emit("<font %s>%s</font>"%(self.style_red,now+str(e)))
+            self.trigger.emit("<font %s>%s</font>"%(self.style_red,now+str(e)),1)
             logging.exception(e)
         else:
             self.loginmysqlflag = False
@@ -84,12 +86,12 @@ class dcmain:
     def loginORC(self):
         now = getTime()
         try:
-            self.trigger.emit("<font %s>%s</font>"%(self.style_green,now+'Start to connect Oracle server '))
+            self.trigger.emit("<font %s>%s</font>"%(self.style_green,now+'Start to connect Oracle server '),1)
             self.dc.loginOrc()
-            self.trigger.emit("<font %s>%s</font>"%(self.style_green,now+'Connect Oracle success! '))
+            self.trigger.emit("<font %s>%s</font>"%(self.style_green,now+'Connect Oracle success! '),1)
         except Exception,e:
-            self.trigger.emit("<font %s>%s</font>"%(self.style_red,now+str(e)))
-            self.trigger.emit("<font %s>%s</font>"%(self.style_red,now+'Reconn after 15 seconds'))
+            self.trigger.emit("<font %s>%s</font>"%(self.style_red,now+str(e)),1)
+            self.trigger.emit("<font %s>%s</font>"%(self.style_red,now+'Reconn after 15 seconds'),1)
             logging.exception(e)
             self.loginorcflag = True
             self.loginorccount = 1
@@ -107,14 +109,15 @@ class dcmain:
                 self.dc.getSiteID()
                 self.dc.getWlcp()
                 self.dc.getBkcp()
+                self.dc.getIPState()
                 self.count = 0
         except MySQLdb.Error,e:
-            self.trigger.emit("<font %s>%s</font>"%(self.style_red,getTime()+str(e)))
+            self.trigger.emit("<font %s>%s</font>"%(self.style_red,getTime()+str(e)),1)
             logging.exception(e)
             self.loginmysqlflag = True
             self.loginmysqlcount = 1
         except Exception,e:
-            self.trigger.emit("<font %s>%s</font>"%(self.style_red,getTime()+str(e)))
+            self.trigger.emit("<font %s>%s</font>"%(self.style_red,getTime()+str(e)),1)
             logging.exception(e)
             if str(e)[:3] == 'ORA':
                 self.loginorcflag = True
@@ -126,8 +129,9 @@ class dcmain:
             self.dc.getSiteID()
             self.dc.getWlcp()
             self.dc.getBkcp()
+            self.dc.getIPState()
         except Exception,e:
-            self.trigger.emit("<font %s>%s</font>"%(self.style_red,getTime()+str(e)))
+            self.trigger.emit("<font %s>%s</font>"%(self.style_red,getTime()+str(e)),1)
             logging.exception(e)
             self.loginorcflag = True
             self.loginorccount = 1
@@ -156,13 +160,13 @@ class dcmain:
                 #print '456'
                 if self.loginorccount==0:
                     self.loginORC()
+                    self.dc.getIPState()
                 elif self.loginorccount<=15:
                     self.loginorccount += 1
                     time.sleep(1)
                 else:
                     self.loginorccount = 0
             else:
-                #print 'self.setupflag',self.setupflag
                 if self.setupflag:
                     self.mainLoop()
                 else:
@@ -171,13 +175,34 @@ class dcmain:
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):  
         super(MainWindow, self).__init__(parent)
-        self.resize(600, 450)
+        self.resize(650, 450)
         self.setWindowTitle(version())
+
+        self.tree = QtGui.QTreeWidget()
+        self.tree.setMinimumWidth(200)
+        self.tree.setMaximumWidth(250)
+        self.tree.setColumnCount(2)
+        self.tree.setHeaderLabels(['IP','Conn'])
+
+        self.root = QtGui.QTreeWidgetItem(self.tree)
+        self.root.setText(0,'State')
+
+        self.count = 0
+        self.ipdict = {}
+        self.statelist = [('off',QtGui.QColor(255,0,0)),('on',QtGui.QColor(0,200,50))]
+        self.statedict = {0:self.statelist[0],2:self.statelist[1]}
+        
+        self.tree.addTopLevelItem(self.root)
+
+        self.setCentralWidget(self.tree)
         
         self.text_area = QtGui.QTextBrowser()
+        self.text_area.setMinimumWidth(500)
+        self.text_area.setMinimumHeight(400)
  
         central_widget = QtGui.QWidget()
         central_layout = QtGui.QHBoxLayout()
+        central_layout.addWidget(self.tree)
         central_layout.addWidget(self.text_area)
         central_widget.setLayout(central_layout)
         self.setCentralWidget(central_widget)
@@ -223,16 +248,29 @@ class MainWindow(QtGui.QMainWindow):
         self.threads.append(thread) # keep a reference
             
  
-    def update_text(self, message):
-        #self.text_area.append(message)
-        self.text_area.append(unicode(message, 'gbk'))
+    def update_text(self, message,m_type):
+        if m_type == 1:
+            self.text_area.append(unicode(message, 'gbk'))
+            self.count += 1
+            if self.count >1000:
+                self.text_area.clear()
+                self.count = 0
+        else:
+            if self.ipdict.get(message,0) == 0:
+                self.ipdict[message] = QtGui.QTreeWidgetItem(self.root)
+            else:
+                pass
+            one = self.statedict.get(m_type,(self.statelist[0],self.statelist[0]))
+            self.ipdict[message].setText(0,message)
+            self.ipdict[message].setText(1,one[0])
+            self.ipdict[message].setTextColor(1,one[1])
  
 if __name__ == '__main__':
-##    myapp = singleinstance()
-##    if myapp.aleradyrunning():
-##        print version(),'已经启动!3秒后自动退出...'
-##        time.sleep(3)
-##        sys.exit(0)
+    myapp = singleinstance2()
+    if myapp.aleradyrunning():
+        print version(),'已经启动!3秒后自动退出...'
+        time.sleep(3)
+        sys.exit(0)
     
     app = QtGui.QApplication(sys.argv)
  

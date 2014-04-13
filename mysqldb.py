@@ -173,6 +173,27 @@ class ImgMysql:
         else:
             self.conn.commit()
             return s
+
+    def getIPList(self,fid=0):
+        try:
+            self.cur.execute("select * from iplist where fid=%s",fid)
+            s = self.cur.fetchall()
+        except MySQLdb.Error,e:
+            raise
+        else:
+            self.conn.commit()
+            return s
+
+    def getNewIP(self,ip=[]):
+        try:
+            strip = "','".join(ip)
+            self.cur.execute("select ip from iplist where ip not in('%s')"%strip)
+            s = self.cur.fetchall()
+        except MySQLdb.Error,e:
+            raise
+        else:
+            self.conn.commit()
+            return s
         
     def getImgInfoByIP(self,limit=10,ip=''):
         try:
