@@ -54,33 +54,6 @@ class DataCenter:
     def __del__(self):
         del self.imgMysql
         del self.orc
-        #print 'datacenter quit'
-
-##    def setupMysql(self):
-##        try:
-##            self.imgMysql.login()
-##        except Exception,e:
-##            now = getTime()
-##            print now,e
-##            #logging.exception(e)
-##            print now,'Reconn after 15 seconds'
-##            time.sleep(15)
-##            self.setupMysql()
-##        else:
-##            pass        
-##            
-##    def setupOrc(self):
-##        try:
-##            self.orc.login()
-##        except Exception,e:
-##            now = getTime()
-##            print now,e
-##            #logging.exception(e)
-##            print now,'Reconn after 15 seconds'
-##            time.sleep(15)
-##            self.setupOrc()
-##        else:
-##            pass
 
     def loginMysql(self):
         self.imgMysql.login()
@@ -114,16 +87,18 @@ class DataCenter:
                 self.trigger.emit("%s"%i['ip'],conn_state)
                 
         except MySQLdb.Error,e:
-##            self.trigger.emit("<font %s>%s</font>"%(self.style_red,getTime()+str(e)),1)
-##            logging.exception(e)
-##            self.loginmysqlflag = True
-##            self.loginmysqlcount = 0
             raise
         except Exception,e:
             raise
-##            self.trigger.emit("<font %s>%s</font>"%(self.style_red,getTime()+str(e)),1)
-##            logging.exception(e)
 
+    def setNewIniTime(self):
+        try:
+            self.imgMysql.setNewIniTime()
+        except MySQLdb.Error,e:
+            raise
+        except Exception,e:
+            raise
+        
     def getWlcp(self):
         for i in self.orc.getWlcp():
             if self.getFuzzy(i[0])==-1:

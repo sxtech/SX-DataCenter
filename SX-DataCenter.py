@@ -110,6 +110,7 @@ class dcmain:
                 self.dc.getWlcp()
                 self.dc.getBkcp()
                 self.dc.getIPState()
+                self.dc.setNewIniTime()
                 self.count = 0
         except MySQLdb.Error,e:
             self.trigger.emit("<font %s>%s</font>"%(self.style_red,getTime()+str(e)),1)
