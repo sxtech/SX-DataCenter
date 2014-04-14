@@ -138,7 +138,7 @@ class ImgMysql:
         try:
             if self.imgtime == None:
                 self.getLastFlagTime()
-            self.cur.execute("(select captime from indexcenter where iniflag='0' and captime>=%s ORDER BY captime limit 0,1)  union all (select captime from indexcenter5 where iniflag='1' and captime>=%s ORDER BY captime desc limit 0,1)",(self.initime,self.initime))
+            self.cur.execute("(select captime from indexcenter where iniflag='0' and captime>=%s ORDER BY captime limit 0,1)  union all (select captime from indexcenter where iniflag='1' and captime>=%s ORDER BY captime desc limit 0,1) ORDER BY captime limit 0,1",(self.initime,self.initime))
             new_initime = self.cur.fetchone()
             self.conn.commit()
             if new_initime==None:
@@ -154,7 +154,7 @@ class ImgMysql:
         try:
             if self.imgtime == None:
                 self.getLastFlagTime()
-            self.cur.execute("(select captime from indexcenter where imgflag=0 and captime>=%s ORDER BY captime limit 0,1) union all (select captime from indexcenter where imgflag=1 and captime>=%s ORDER BY captime desc limit 0,1)",(self.imgtime,self.imgtime))
+            self.cur.execute("(select captime from indexcenter where imgflag=0 and captime>=%s ORDER BY captime limit 0,1) union all (select captime from indexcenter where imgflag=1 and captime>=%s ORDER BY captime desc limit 0,1) ORDER BY captime limit 0,1",(self.imgtime,self.imgtime))
             new_imgtime = self.cur.fetchone()
             self.conn.commit()
             if new_imgtime==None:
@@ -163,7 +163,6 @@ class ImgMysql:
             self.cur.execute("update timeflag set imgtime=%s where id=1",new_imgtime['captime'])
             self.conn.commit()
             self.imgtime=new_imgtime['captime'] - datetime.timedelta(minutes = 1)
-            print 'self.imgtime',self.imgtime
         except MySQLdb.Error,e:
             raise
         
