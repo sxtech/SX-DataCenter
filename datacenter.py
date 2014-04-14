@@ -138,14 +138,12 @@ class DataCenter:
             return False
         
     def setData(self):
-        #plateinfo = self.imgMysql.getPlateInfo()
         values = []
         w_values = []
         try:
-            plateinfo = self.imgMysql.getPlateInfo2()
-            count = len(plateinfo)
-            s = {}
-            if count > 0:
+            plateinfo = self.imgMysql.getPlateInfo()
+            num = len(plateinfo)
+            if num > 0:
                 for s in plateinfo:
                     if self.checkWlcpPlate(s['platecode'].encode('gbk')):
                         w_values.append((self.direction.get(s['directionid'],u'其他').encode('gbk'),s['platecode'].encode('gbk'),s['platetype'].encode('gbk'),s['platecolor'].encode('gbk'),s['passdatetime'],s['carspeed'],s['imgpath'].encode('gbk'),'SpreadData'+s['disk'].encode('gbk'),'0','F','F','F','F',s['roadname'].encode('gbk'),s['limitspeed'],s['channelid'].encode('gbk'),self.site.get(s['roadname'].encode('gbk'),'0'),s['channelid'].encode('gbk'),s['vehiclecolor'].encode('gbk'),int(s['vehiclecoltype']),s['vehiclelen'].encode('gbk')))
@@ -161,9 +159,8 @@ class DataCenter:
                 if self.orc.addWcltx(values,w_values):
                     self.imgMysql.sqlCommit()
                     self.orc.orcCommit()
-                    carstr =  '%s %s %s | %s | %s | %s车道 | IP:%s'%(getTime(),s['platecode'].encode("gbk"),s['platecolor'].encode("gbk"),s['roadname'].encode("gbk"),self.direction.get(s['directionid'],u'其他').encode("gbk"),s['channelid'].encode("gbk"),s['pcip'].encode("gbk"))
-                    self.trigger.emit("<font %s>%s</font>"%(self.style_blue,carstr),1)
-                #print getTime(),'update %s plateinfo'%count
+                    carstr = '<table><tr style="font-family:arial;font-size:14px;color:blue"><td>%s<td><td width="100">%s</td><td width="40">%s</td><td width="160">%s</td><td width="70">%s</td><td width="40">%s车道</td></tr></table>'%(getTime(),plateinfo[-1]['platecode'].encode("gbk"),plateinfo[-1]['platecolor'].encode("gbk"),plateinfo[-1]['roadname'].encode("gbk"),self.direction.get(plateinfo[-1]['directionid'],u'其他').encode("gbk"),plateinfo[-1]['channelid'].encode("gbk"))
+                    self.trigger.emit("%s"%carstr,1)
             else:
                 time.sleep(0.25)
         except MySQLdb.Error,e:

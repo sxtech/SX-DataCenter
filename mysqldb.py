@@ -230,19 +230,19 @@ class ImgMysql:
             self.conn.commit()
             return s
         
-    def getImgInfoByIP(self,limit=10,ip=''):
-        try:
-            if ip == '':
-                strip = ''
-            else:
-                strip = "and pcip='%s'"%ip
-            self.cur.execute("select id,pcip,inifile,imgpath,iniflag from indexcenter where imgflag = 0 and iniflag in ('D','E','F','G','H','I','J','K') %s order by passdatetime desc limit 0,%s"%(strip,limit))
-            s = self.cur.fetchall()
-        except MySQLdb.Error,e:
-            raise
-        else:
-            self.conn.commit()
-            return s
+##    def getImgInfoByIP(self,limit=10,ip=''):
+##        try:
+##            if ip == '':
+##                strip = ''
+##            else:
+##                strip = "and pcip='%s'"%ip
+##            self.cur.execute("select id,pcip,inifile,imgpath,iniflag from indexcenter where imgflag = 0 and iniflag in ('D','E','F','G','H','I','J','K') %s order by passdatetime desc limit 0,%s"%(strip,limit))
+##            s = self.cur.fetchall()
+##        except MySQLdb.Error,e:
+##            raise
+##        else:
+##            self.conn.commit()
+##            return s
 
     #main
 ##    def getImgInfoByIPList2(self,limit=10,ip=[]):
@@ -339,31 +339,16 @@ class ImgMysql:
             raise
             
     def endOfCur(self):
-        #print 'commit and close'
         self.conn.commit()
         
     def sqlCommit(self):
-        #print 'sql commit'
         self.conn.commit()
         
     def sqlRollback(self):
         self.conn.rollback()
 
     #main
-    def getPlateInfo(self,limit=20):
-        try:
-            if self.imgtime == None:
-                self.getLastFlagTime()
-            self.cur.execute("select * from indexcenter where iniflag='0' and captime>=%s ORDER BY passdatetime DESC limit 0,%s",(self.initime,limit))
-            s = self.cur.fetchall()
-        except MySQLdb.Error,e:
-            #print e
-            raise
-        else:
-            self.conn.commit()
-            return s
-
-    def getPlateInfo2(self,limit=10):
+    def getPlateInfo(self,limit=10):
         try:
             if self.imgtime == None:
                 self.getLastFlagTime()

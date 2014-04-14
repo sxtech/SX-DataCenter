@@ -176,7 +176,7 @@ class dcmain:
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):  
         super(MainWindow, self).__init__(parent)
-        self.resize(650, 450)
+        self.resize(800, 450)
         self.setWindowTitle(version())
 
         self.tree = QtGui.QTreeWidget()
@@ -198,7 +198,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.tree)
         
         self.text_area = QtGui.QTextBrowser()
-        self.text_area.setMinimumWidth(500)
+        self.text_area.setMinimumWidth(600)
         self.text_area.setMinimumHeight(400)
  
         central_widget = QtGui.QWidget()
@@ -222,8 +222,6 @@ class MainWindow(QtGui.QMainWindow):
         toolbar = self.addToolBar('Exit')
         toolbar.addAction(exit)
         
-        #self.setGeometry(300, 300, 250, 150)
-        #self.setWindowTitle('Icon')
         self.setWindowIcon(QtGui.QIcon('icons/logo2.png'))
         
         self.start_threads()
