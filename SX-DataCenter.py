@@ -26,7 +26,7 @@ def initLogging(logFilename):
                     filemode = 'a');
 
 def version():
-    return 'SX-DataCenter V0.2.0'
+    return 'SX-DataCenter V0.2.4'
 
 
 #ds = DiskState()
