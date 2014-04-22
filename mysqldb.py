@@ -100,11 +100,13 @@ class ImgMysql:
             self.conn.commit()
             return s
 
+
     def setNewIniTime(self):
         try:
             if self.imgtime == None:
                 self.getLastFlagTime()
-            self.cur.execute("(select captime from indexcenter where iniflag=0 and captime>=%s ORDER BY captime limit 0,1)  union all (select captime from indexcenter where iniflag=1 and captime>=%s ORDER BY captime desc limit 0,1) ORDER BY captime limit 0,1",(self.initime,self.initime))
+            endtime = self.initime + datetime.timedelta(minutes = 60)
+            self.cur.execute("(select captime from indexcenter where iniflag=0 and captime>=%s and captime<=%s ORDER BY captime limit 0,1)  union all (select captime from indexcenter where iniflag=1 and captime>=%s and captime<=%s ORDER BY captime desc limit 0,1) ORDER BY captime limit 0,1",(self.initime,endtime,self.initime,endtime))
             new_initime = self.cur.fetchone()
             self.conn.commit()
             if new_initime==None:
@@ -120,7 +122,8 @@ class ImgMysql:
         try:
             if self.imgtime == None:
                 self.getLastFlagTime()
-            self.cur.execute("(select captime from indexcenter where imgflag=0 and captime>=%s ORDER BY captime limit 0,1) union all (select captime from indexcenter where imgflag=1 and captime>=%s ORDER BY captime desc limit 0,1) ORDER BY captime limit 0,1",(self.imgtime,self.imgtime))
+            endtime = self.imgtime + datetime.timedelta(minutes = 60)
+            self.cur.execute("(select captime from indexcenter where imgflag=0 and captime>=%s and captime<=%s ORDER BY captime limit 0,1) union all (select captime from indexcenter where imgflag=1 and captime>=%s and captime<=%s ORDER BY captime desc limit 0,1) ORDER BY captime limit 0,1",(self.imgtime,endtime,self.imgtime,endtime))
             new_imgtime = self.cur.fetchone()
             self.conn.commit()
             if new_imgtime==None:
@@ -128,7 +131,7 @@ class ImgMysql:
                 new_imgtime['captime']=self.imgtime
             self.cur.execute("update timeflag set imgtime=%s where id=1",new_imgtime['captime'])
             self.conn.commit()
-            self.imgtime=new_imgtime['captime'] - datetime.timedelta(minutes = 1)
+            self.imgtime=new_imgtime['captime'] - datetime.timedelta(minutes = 5)
         except MySQLdb.Error,e:
             raise
         
@@ -146,6 +149,7 @@ class ImgMysql:
         try:
             self.cur.executemany('insert into indexcenter(datefolder,pcip,captime,inifile,disk_id,imgpath,deviceid,roadname,roadid,channelname,channelid,passdatetime,datetime,platecode,platecolor,platetype,vehiclelen,vehiclecolor,vehiclecoltype,speed,carspeed,limitspeed,speedd,speedx,overspeed,cameraip,directionid,channeltype) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', values)
         except MySQLdb.Error,e:
+            #print e
             self.conn.rollback()
             return False
         else:
@@ -201,7 +205,20 @@ class ImgMysql:
             if self.imgtime == None:
                 self.getLastFlagTime()
             strip = "','".join(ip)
-            self.cur.execute("select i.id,i.pcip,i.inifile,i.imgpath,i.platecode,i.platecolor,i.roadname,i.directionid,i.channelid,i.pcip,d.d_ip,d.disk from indexcenter as i LEFT JOIN disk as d on i.disk_id = d.id where i.imgflag = 0 and i.pcip in('%s') and i.captime>='%s' order by i.passdatetime desc limit 0,%s"%(strip,self.imgtime,limit))
+            self.cur.execute("select i.id,i.pcip,i.inifile,i.imgpath,i.platecode,i.platecolor,i.roadname,i.directionid,i.channelid,i.pcip,d.d_ip,d.disk from indexcenter as i LEFT JOIN disk as d on i.disk_id = d.id where i.imgflag = 0 and i.pcip in('%s') and i.captime>='%s' and i.captime<='%s' order by i.passdatetime desc limit 0,%s"%(strip,self.imgtime,self.imgtime+datetime.timedelta(minutes=30),limit))
+            s = self.cur.fetchall()
+        except MySQLdb.Error,e:
+            raise
+        else:
+            self.conn.commit()
+            return s
+
+    def getNewImgInfoByIPList(self,limit=10,ip=[]):
+        try:
+            if self.imgtime == None:
+                self.getLastFlagTime()
+            strip = "','".join(ip)
+            self.cur.execute("select i.id,i.pcip,i.inifile,i.imgpath,i.platecode,i.platecolor,i.roadname,i.directionid,i.channelid,i.pcip,d.d_ip,d.disk from indexcenter as i LEFT JOIN disk as d on i.disk_id = d.id where i.imgflag = 0 and i.pcip in('%s') and i.captime>='%s' order by i.passdatetime desc limit 0,%s"%(strip,datetime.datetime.now()-datetime.timedelta(minutes=10),limit))
             s = self.cur.fetchall()
         except MySQLdb.Error,e:
             raise
@@ -277,7 +294,19 @@ class ImgMysql:
         try:
             if self.imgtime == None:
                 self.getLastFlagTime()
-            self.cur.execute("select i.*,d.d_ip,d.disk from indexcenter as i left join disk as d on i.disk_id=d.id where i.iniflag=0 and i.captime>=%s ORDER BY i.passdatetime DESC limit 0,%s",(self.initime,limit))
+            self.cur.execute("select i.*,d.d_ip,d.disk from indexcenter as i left join disk as d on i.disk_id=d.id where i.iniflag=0 and i.captime>=%s and i.captime<=%s  ORDER BY i.passdatetime DESC limit 0,%s",(self.initime,self.initime+datetime.timedelta(minutes=30),limit))
+            s = self.cur.fetchall()
+        except MySQLdb.Error,e:
+            raise
+        else:
+            self.conn.commit()
+            return s
+
+    def getNewPlateInfo(self,limit=10):
+        try:
+            if self.imgtime == None:
+                self.getLastFlagTime()
+            self.cur.execute("select i.*,d.d_ip,d.disk from indexcenter as i left join disk as d on i.disk_id=d.id where i.iniflag=0 and i.captime>=%s ORDER BY i.passdatetime DESC limit 0,%s",(datetime.datetime.now()-datetime.timedelta(minutes=5),limit))
             s = self.cur.fetchall()
         except MySQLdb.Error,e:
             raise

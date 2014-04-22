@@ -141,8 +141,11 @@ class DataCenter:
         values = []
         w_values = []
         try:
-            plateinfo = self.imgMysql.getPlateInfo()
+            plateinfo = self.imgMysql.getNewPlateInfo()
+            if len(plateinfo) == 0:
+                plateinfo = self.imgMysql.getPlateInfo()
             num = len(plateinfo)
+
             if num > 0:
                 for s in plateinfo:
                     if self.checkWlcpPlate(s['platecode'].encode('gbk')):
@@ -162,7 +165,7 @@ class DataCenter:
                     carstr = '<table><tr style="font-family:arial;font-size:14px;color:blue"><td>%s<td><td width="100">%s</td><td width="40">%s</td><td width="160">%s</td><td width="70">%s</td><td width="40">%s车道</td></tr></table>'%(getTime(),plateinfo[-1]['platecode'].encode("gbk"),plateinfo[-1]['platecolor'].encode("gbk"),plateinfo[-1]['roadname'].encode("gbk"),self.direction.get(plateinfo[-1]['directionid'],u'其他').encode("gbk"),plateinfo[-1]['channelid'].encode("gbk"))
                     self.trigger.emit("%s"%carstr,1)
             else:
-                time.sleep(0.25)
+                time.sleep(0.125)
         except MySQLdb.Error,e:
             raise
         except Exception,e:
